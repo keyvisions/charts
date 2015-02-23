@@ -1,4 +1,6 @@
 window.chart = (function() {
+    var colors = ['#5DA5DA', '#4D4D4D', '#FAA43A', '#60BD68', '#F17CB0', '#B2912F', '#B276B2', '#DECF3F', '#F15854'];
+    
     // Helper functions
     function setAttributes(element, attrs) {
         for (var key in attrs) element.setAttribute(key, attrs[key]);
@@ -44,7 +46,7 @@ window.chart = (function() {
         return obj;
     }
     
-    //    alert(Math.log(w) / Math.log(10));
+    // alert(Math.log(w) / Math.log(10));
     var chart = {
         line: function(w, h, data, options) {
             var svg = createSVGElement('svg', {
@@ -52,39 +54,38 @@ window.chart = (function() {
                 'width': w,
                 'height': h
             });
+            // Grid
             var d = '';
-            for (var i = 0; i <= w; i += 10)
+            for (var i = 0; i <= Math.max(w, h); i += 10)
                 d += 'M0 ' + i + ' H' + w + ' M' + i + ' 0 V' + h + ' ';
-            var element = createSVGElement('path', {
+            svg.appendChild(createSVGElement('path', {
                 'class': 'grid',
                 'd': d
-            });
-            svg.appendChild(element);
-            svg.appendChild(line(0, 0, 0, h - 1, {
-                'class': 'axes'
             }));
-            svg.appendChild(line(0, h - 1, w - 1, h - 1, {
-                'class': 'axes'
+            // Axes
+            svg.appendChild(createSVGElement('path', {
+                'class': 'axes',
+                'd': 'M0,0 V' + h + ' M0,' + h + ' H' + w
             }));
-            element = createSVGElement('polyline', {
-                'class': 'lineset0'
-            });
-            var points = '',
-                scale = 2,
-                x, y, mx, Mx, my, My, xo = 0,
-                yo = h;
-            for (var i = 0; i < data.length; ++i) {
-                x = data[i], y = data[++i];
-                if (x < mx || mx === undefined) mx = x;
-                if (x > Mx || Mx === undefined) Mx = x;
-                if (y < my || my === undefined) my = y;
-                if (y > My || My === undefined) My = y;
-                x = xo + x * scale, y = yo - y * scale;
-                points += x + ',' + y + ' ';
-                svg.appendChild(circle(3, x, y, { 'class': 'set0' }));
+            
+            // Points
+            if (data.length > 0) {
+                var xo = Math.min.apply(Math, data[0].value), sx = w / (Math.max.apply(Math, data[0].value) - xo);
+                for (var s = 1; s < data.length; ++s) {
+                    var yo = Math.min.apply(Math, data[s].value), sy = h / (Math.max.apply(Math, data[s].value) - yo);
+
+                    var points = '';
+                    for (var i = 0; i < data[0].value.length; ++i) {
+                        var x = Math.floor((data[0].value[i] - xo) * sx), y = h - Math.floor((data[s].value[i] - yo) * sy);
+                        svg.appendChild(circle(3, x, y, { 'style': 'stroke:none;fill:' + colors[s % 9] }));
+                        points += x + ',' + y + ' ';
+                    }
+                    svg.appendChild(createSVGElement('polyline', {
+                        'style': 'stroke:' + colors[s % 9],
+                        'points': points
+                    }));
+                }
             }
-            element.setAttribute('points', points);
-            svg.appendChild(element);
             return svg;
         },
         histogram: function(w, h, data, options) {
@@ -104,7 +105,7 @@ window.chart = (function() {
                 dw = Math.floor((w - 5 * (sets + 2)) / data.length);
             for (var i = 0; i < data.length; ++i) {
                 element = rect(i * dw + 5 * (Math.floor(i / sets) + 1), h - Math.floor(h * data[i] / m), dw - 1, Math.floor(h * data[i] / m));
-                element.setAttribute('class', 'set' + (i % sets));
+                element.setAttribute('style', 'fill:' + colors[i % sets]);
                 svg.appendChild(element);
             }
             svg.appendChild(line(0, 0, 0, h - 1, {
@@ -130,7 +131,7 @@ window.chart = (function() {
                     startAngle = endAngle;
                     endAngle = startAngle + 2.0 * Math.PI * data[i].value / total;
                     var slice = createSVGElement('path', {
-                        'class': 'set' + i,
+                        'style': 'fill:' + colors[i % 9],
                         'd': 'M' + r + ',' + r + ' L' + Math.floor(r + r * Math.cos(startAngle)) + ',' + Math.floor(r + r * Math.sin(startAngle)) + ' A' + r + ',' + r + ' 0 ' + (2.0 * data[i].value > total ? 1 : 0) + ',1 ' + Math.floor(r + r * Math.cos(endAngle)) + ',' + Math.floor(r + r * Math.sin(endAngle))
                     });
                     var title = createSVGElement('title');
@@ -158,6 +159,7 @@ window.chart = (function() {
             return svg;
         },
         radar: function(r, data, options) {
+            var s = 0;
             var svg = createSVGElement('svg', {
                 'class': 'radar',
                 'width': 2 * r,
@@ -167,13 +169,13 @@ window.chart = (function() {
             for (var i = 0; i < data.length; ++i) {
                 d += 'M' + r + ',' + r + ' l' + Math.floor(r * Math.cos(a * i)) + ',' + Math.floor(r * Math.sin(a * i)) + ' ';
                 points += Math.floor(r + r * data[i] / m * Math.cos(a * i)) + ',' + Math.floor(r + r * data[i] / m * Math.sin(a * i)) + ' ';
-                svg.appendChild(circle(3, Math.floor(r + r * data[i] / m * Math.cos(a * i)), Math.floor(r + r * data[i] / m * Math.sin(a * i)), { 'class': 'set0' }));
+                svg.appendChild(circle(3, Math.floor(r + r * data[i] / m * Math.cos(a * i)), Math.floor(r + r * data[i] / m * Math.sin(a * i)), { 'style': 'stroke:none;fill:' + colors[s % 9] }));
             }
             svg.insertBefore(createSVGElement('path', {
                 'd': d
             }), svg.firstChild);
             svg.appendChild(createSVGElement('polygon', {
-                'class': 'lineset0',
+                'style': 'stroke:' + colors[s % 9],
                 'points': points 
             }));
 
@@ -197,7 +199,7 @@ window.chart = (function() {
                 });
                 svg.appendChild(element);
                 element = createSVGElement('path', {
-                    'class': 'set' + i % 9,
+                    'style': 'stroke:none;fill:' + colors[i % 9],
                     'd': 'M0,' + r + ' A' + r + ',' + r + ' 0 0,1 ' + Math.floor(r + r * Math.cos(Math.PI * v)) + ',' + Math.floor(r - r * Math.sin(Math.PI * v)) + 
                     ' L' + Math.floor(r + sr * Math.cos(Math.PI * v)) + ',' + Math.floor(r - sr * Math.sin(Math.PI * v)) + ' A' + sr + ',' + sr + ' 0 0,0 ' + (r - sr) + ',' + r + ' z'
                 });

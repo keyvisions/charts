@@ -8,48 +8,8 @@ path {
     fill: #FFF;
 }
 polyline, polygon {
-    stroke: #5DA5DA;
     fill: none;
     vector-effect: non-scaling-stroke;
-}
-.line circle {
-    stroke: #000;
-}
-.set0 {
-    fill: #5DA5DA;
-    /*gray*/
-}
-.set1 {
-    fill: #4D4D4D;
-    /*blue*/
-}
-.set2 {
-    fill: #FAA43A;
-    /*orange*/
-}
-.set3 {
-    fill: #60BD68;
-    /*green*/
-}
-.set4 {
-    fill: #F17CB0;
-    /*pink*/
-}
-.set5 {
-    fill: #B2912F;
-    /*brown*/
-}
-.set6 {
-    fill: #B276B2;
-    /*purple*/
-}
-.set7 {
-    fill: #DECF3F;
-    /*yellow*/
-}
-.set8 {
-    fill: #F15854;
-    /*red*/
 }
 .grid {
     stroke: #DDD;
