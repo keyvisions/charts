@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+	<meta charset="utf-8">
+	<title>SVG Charts</title>
+	<link rel="stylesheet" href="styles/charts.css">
+	<script src="scripts/charts.js"></script>
+	<script src="data/datasource.js"></script>
+	<script>
+		window.addEventListener('load', function () {
+			var body = document.body;
+			body.appendChild(chart.pie(200, pie));
+			body.appendChild(chart.donut(100, pie));
+			body.appendChild(chart.line(200, 200, [12, 12, 13, 6, 23, 78, 54, 12]));
+			body.appendChild(chart.bubble(400, 400, [12, 12, 13, 6, 23, 78, 54, 12]));
+			body.appendChild(chart.histogram(400, 200, [12, 12, 13, 6, 23, 78, 54, 12]));
+			body.appendChild(chart.radar(150, [100, 30, 50, 60, 56, 56, 45, 12]));
+			body.appendChild(chart.map(400, 400, [12, 12, 13, 6, 23, 78, 54, 12]));
+			body.appendChild(chart.gauge(50, gauge));
+			body.appendChild(chart.gantt(400, 400, gantt));
+		});
+	</script>
+</head>
+
+<body> </body>
+
+</html>
