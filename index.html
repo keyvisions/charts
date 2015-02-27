@@ -12,15 +12,15 @@
 			var body = document.body;
 			
 			// See datasource.js for data sets
-			body.appendChild(chart.pie(200, pie));
-			body.appendChild(chart.donut(100, pie));
-			body.appendChild(chart.line(200, 200, line));
-			body.appendChild(chart.bubble(400, 400, [12, 12, 13, 6, 23, 78, 54, 12]));
-			body.appendChild(chart.histogram(400, 200, [12, 12, 13, 6, 23, 78, 54, 12]));
-			body.appendChild(chart.radar(150, [100, 30, 50, 60, 56, 56, 45, 12]));
-			body.appendChild(chart.map(400, 400, [12, 12, 13, 6, 23, 78, 54, 12]));
-			body.appendChild(chart.gauge(50, gauge));
-			body.appendChild(chart.gantt(400, 400, gantt));
+			body.appendChild(chart.pie(50, pie));
+			body.appendChild(chart.donut(50, pie));
+			body.appendChild(chart.line(300, 100, line, { 'grid': true }));
+			body.appendChild(chart.bubble(400, 100, line));
+			body.appendChild(chart.histogram(400, 200, line, { 'grid': true }));
+			body.appendChild(chart.radar(100, line));
+//			body.appendChild(chart.map(400, 200, [12, 12, 13, 6, 23, 78, 54, 12]));
+			body.appendChild(chart.gauge(50, gauge, { 'min': 0 }));
+//			body.appendChild(chart.gantt(400, 200, gantt));
 		});
 	</script>
 </head>

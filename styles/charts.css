@@ -18,6 +18,7 @@ polyline, polygon {
     vector-effect: non-scaling-stroke;
 }
 .axes {
+    stroke-width: 1px;
     stroke: #000;
     shape-rendering: crispEdges;
     vector-effect: non-scaling-stroke;
