@@ -37,17 +37,39 @@ window.chart = (function() {
         return obj;
     }
 
-    function grid(w, h, min, max) {
-        var d = '';
-        for (var i = Math.max(w, h); i >= 0 ; i -= 10)
-            d += 'M0 ' + i + ' H' + w + ' M' + i + ' 0 V' + h + ' ';
-        return createSVGElement('path', {
-            'class': 'grid',
-            'd': d
-        });
+    function grid(w, h, xmin, xmax, ymin, ymax, options) {
+        var obj = createSVGElement('g');
+        
+        // Grid: optionally present
+        var dx = Math.floor((xmax - xmin) / w), dy = Math.floor((ymax - ymin) / h);
+        var factor = Math.floor(Math.log(dx) / Math.log(10));
+
+        if (!options || options['grid'] !== false) {
+            var d = '';
+            for (var i = Math.max(w, h); i >= 0 ; i -= 10)
+                d += 'M0 ' + i + ' H' + w + ' M' + i + ' 0 V' + h + ' ';
+            obj.appendChild(createSVGElement('path', {
+                'class': 'grid',
+                'd': d,
+                'data-param': null
+            }));
+        }
+        // Axes: always present
+        obj.appendChild(createSVGElement('path', {
+            'class': 'axes',
+//            'd': 'M' + -Math.floor(xo * sx) + ',0 V' + h + ' M0,' + h + Math.floor(yo * sy) + ' H' + w
+        }));
+/*        
+        var xo = Math.min.apply(Math, data[0].value), sx = w / (Math.max.apply(Math, data[0].value) - xo), yo = Number.POSITIVE_INFINITY, sy;
+        for (var s = 1; s < data.length; ++s) {
+            yo = Math.min(yo, Math.min.apply(Math, data[s].value)), sy = h / (Math.max.apply(Math, data[s].value) - yo);
+        }
+        sy *= 0.9;
+*/
+        return obj;
     }
     
-    // alert(Math.log(w) / Math.log(10));
+    // Data argument includes one or more data sets each includes an array and optionally label.
     var chart = {
         line: function(w, h, data, options) {
             var svg = createSVGElement('svg', {
@@ -55,35 +77,53 @@ window.chart = (function() {
                 'width': w,
                 'height': h
             });
-            // Grid
-            if (!options || options['grid'] != false)
-                svg.appendChild(grid(w, h));
             // Points
-            if (data.length > 0) {
-                var xo = Math.min.apply(Math, data[0].value), sx = w / (Math.max.apply(Math, data[0].value) - xo), yo = Number.POSITIVE_INFINITY, sy;
+            if (data.length > 1) {
+                var xmin = Math.min.apply(Math, data[0].value), xmax = Math.max.apply(Math, data[0].value), ymin = Number.POSITIVE_INFINITY, ymax = Number.NEGATIVE_INFINITY;
                 for (var s = 1; s < data.length; ++s) {
-                    yo = Math.min(yo, Math.min.apply(Math, data[s].value)), sy = h / (Math.max.apply(Math, data[s].value) - yo);
+                    ymin = Math.min(ymin, Math.min.apply(Math, data[s].value)), ymax = Math.max(ymax, Math.max.apply(Math, data[s].value));
                 }
-                sy *= 0.9;
-                // Axes
-                svg.appendChild(createSVGElement('path', {
-                    'class': 'axes',
-                    'd': 'M' + -Math.floor(xo * sx) + ',0 V' + h + ' M0,' + h + Math.floor(yo * sy) + ' H' + w
-                }));
-    
+
+                svg.appendChild(grid(w, h, xmin, xmax, ymin, ymax, options));
+
                 for (var s = 1; s < data.length; ++s) {
                     var points = '', I = Math.min(data[0].value.length, data[s].value.length);
                     for (var i = 0; i < I; ++i) {
-                        var x = (data[0].value[i] - xo) * sx, y = h - (data[s].value[i] - yo) * sy;
-                        svg.appendChild(circle(3, x, y, { 'style': 'stroke:none;fill:' + colors[(s-1) % 9] }));
-                        points += x + ',' + y + ' ';
+//                        var x = (data[0].value[i] - xo) * sx, y = h - (data[s].value[i] - yo) * sy;
+//                        svg.appendChild(circle(3, x, y, { 'style': 'stroke:none;fill:' + colors[(s-1) % 9] }));
+//                        points += x + ',' + y + ' ';
                     }
                     svg.appendChild(createSVGElement('polyline', {
                         'style': 'stroke:' + colors[(s-1) % 9],
                         'points': points
                     }));
                 }
+            } else {
+                // A least two data sets
             }
+            return svg;
+        },
+        polar: function(r, data, options) {
+            var svg = createSVGElement('svg', {
+                'class': 'polar',
+                'width': 2 * r,
+                'height': 2 * r
+            });
+            var xmin = Math.min.apply(Math, data[0].value), xmax = Math.max.apply(Math, data[0].value), ymin = Number.POSITIVE_INFINITY, ymax = Number.NEGATIVE_INFINITY;
+            for (var s = 1; s < data.length; ++s) {
+                ymin = Math.min(ymin, Math.min.apply(Math, data[s].value)), ymax = Math.max(ymax, Math.max.apply(Math, data[s].value));
+            }
+
+            // x, y & r, theta
+            if (!options || options['mode'] !== 'XY') {
+                for (var i = 0; data[0].value.length; ++i) {
+                    for (var s = 1; s < data.length; ++s) {
+                        data[s].value[i] *= Math.sin(data[0].value[i]);
+                    }
+                    data[s].value[i] *= Math.sin(data[0].value[i]);
+                }
+            }
+            
             return svg;
         },
         histogram: function(w, h, data, options) {
@@ -131,35 +171,33 @@ window.chart = (function() {
                 'width': 2 * r,
                 'height': 2 * r
             });
-            var total = 0;
+            var sum = 0;
             for (var s = 0; s < data.length; ++s) 
-                total += data[s].value[0];
-            if (total > 0 && s > 1) {
+                sum += data[s].value[0];
+            if (sum > 0 && s > 1) {
                 var startAngle, endAngle = 0;
                 for (var s = 0; s < data.length; ++s) {
                     startAngle = endAngle;
-                    endAngle = startAngle + 2.0 * Math.PI * data[s].value[0] / total;
+                    endAngle = startAngle + 2.0 * Math.PI * data[s].value[0] / sum;
                     var slice = createSVGElement('path', {
                         'style': 'fill:' + colors[s % 9],
-                        'd': 'M' + r + ',' + r + ' L' + Math.floor(r + r * Math.cos(startAngle)) + ',' + Math.floor(r + r * Math.sin(startAngle)) + ' A' + r + ',' + r + ' 0 ' + (2.0 * data[s].value[0] > total ? 1 : 0) + ',1 ' + Math.floor(r + r * Math.cos(endAngle)) + ',' + Math.floor(r + r * Math.sin(endAngle))
+                        'd': 'M' + r + ',' + r + ' L' + Math.floor(r + r * Math.cos(startAngle)) + ',' + Math.floor(r + r * Math.sin(startAngle)) + ' A' + r + ',' + r + ' 0 ' + (2.0 * data[s].value[0] > sum ? 1 : 0) + ',1 ' + Math.floor(r + r * Math.cos(endAngle)) + ',' + Math.floor(r + r * Math.sin(endAngle))
                     });
                     var title = createSVGElement('title');
-                    title.textContent = data[s].label + ' ' + Math.floor(1000 * data[s].value[0] / total) / 10.0 + '%';
+                    title.textContent = data[s].label + ' ' + Math.floor(1000 * data[s].value[0] / sum) / 10.0 + '%';
                     slice.appendChild(title);
                     svg.appendChild(slice);
                 }
-                return svg;
-            }
-            svg.appendChild(circle(r, r, r));
+            } else
+                svg.appendChild(circle(r, r, r, { 'style': 'fill:' + colors[0] }));
             return svg;
         },
         donut: function(r, data, options) {
             var svg = chart.pie(r, data, options);
-            if (svg.children[0].tagName !== 'circle') svg.appendChild(circle(0.667 * r, r, r));
+            if (svg.firstChild.tagName !== 'circle') svg.appendChild(circle(0.667 * r, r, r));
             svg.setAttribute('class', 'donut');
             return svg;
         },
-        // Requires x, y and r
         bubble: function(w, h, data, options) {
             var svg = createSVGElement('svg', {
                 'class': 'bubble',
@@ -183,7 +221,7 @@ window.chart = (function() {
                 var I = data[0].value.length;
                 for (var i = 0; i < I; ++i) {
                     var x = (data[0].value[i] - xo) * sx, y = h - (data[1].value[i] - yo) * sy;
-                    svg.appendChild(circle(data[2].value[i], x, y, { 'style': 'stroke:none;fill:' + colors[0] }));
+                    svg.appendChild(circle(data[2].value[i], x, y, { 'style': 'fill:none;stroke:' + colors[0] }));
                 }
             }
             return svg;
@@ -198,10 +236,10 @@ window.chart = (function() {
                 'width': 2 * r,
                 'height': 2 * r
             });
-            var m = Number.NEGATIVE_INFINITY;
+            var m = Number.POSITIVE_INFINITY, M = Number.NEGATIVE_INFINITY;
             for (var s = 0; s < data.length; ++s)
-                m = Math.max(m, Math.max.apply(Math, data[s].value));
-            m *= 1.1;
+                m = Math.min(m, Math.min.apply(Math, data[s].value)), M = Math.max(M, Math.max.apply(Math, data[s].value));
+            var dr = Math.abs(M - m);
             
             // Axes
             var a = 2 * Math.PI / data[0].value.length, d = '';
@@ -210,21 +248,18 @@ window.chart = (function() {
             svg.appendChild(createSVGElement('path', {
                 'd': d
             }));
+            svg.appendChild(circle(r * Math.abs(m) / dr, r, r, { 'style': 'fill:none'}));
             // Points
-            for (s = 0; s < data.length; ++s) {
+            for (var s = 0; s < data.length; ++s) {
                 var points = '';
                 for (var i = 0; i < data[s].value.length; ++i) {
-                    var x = Math.floor(r + r * data[s].value[i] / m * Math.cos(a * i)), y = Math.floor(r + r * data[s].value[i] / m * Math.sin(a * i));
+                    var x = Math.floor(r + r * (data[s].value[i] - m) / dr * Math.cos(a * i)), y = Math.floor(r + r * (data[s].value[i] - m) / dr * Math.sin(a * i));
                     points += x + ',' + y + ' ';
                     svg.appendChild(circle(3, x, y, { 'style': 'stroke:none;fill:' + colors[s % 9] }));
                 }
                 svg.appendChild(createSVGElement('polygon', {
                     'style': 'stroke:' + colors[s % 9],
                     'points': points 
-                }));
-                svg.appendChild(text(x + 5, y + 5, data[s].label, {
-                    'style': 'stroke:' + colors[s % 9],
-                    'text-anchor': 'left'
                 }));
             }
             return svg;
@@ -236,24 +271,25 @@ window.chart = (function() {
             if (options && options['min']) m = options['min'];
             if (options && options['max']) M = options['max'];
 
-            for (var i = 0; i < data.length; ++i) {
+            for (var s = 0; s < data.length; ++s) {
                 var svg = createSVGElement('svg', {
                         'class': 'gauge',
                         'width': 2 * r,
                         'height': 2 * r
                     }),
                     sr = Math.floor(0.667 * r),
-                    v = (data[i].value - m) / (M - m);
+                    v = (data[s].value - m) / (M - m);
                 
-                svg.appendChild(text(r, r, (Math.floor(1000 * v) / 10) + '%', { 'font-size': Math.floor(0.333 * r) + 'px' }));
-                svg.appendChild(text(r, Math.floor(1.5 * r), data[i].label, { 'font-size': Math.floor(0.333 * r) + 'px' }));
+                if (data[s].units === undefined) data[s].units = '';
+                svg.appendChild(text(r, r, data[s].value + data[s].units, { 'font-size': Math.floor(0.333 * r) + 'px' }));
+                svg.appendChild(text(r, Math.floor(1.4 * r), data[s].label, { 'font-size': Math.floor(0.25 * r) + 'px' }));
                 v = 1.0 - (v - Math.floor(v));
                 var element = createSVGElement('path', {
                     'd': 'M0,' + r + ' A' + r + ',' + r + ' 0 1,1 ' + Math.floor(r + r) + ',' + r + ' H' + Math.floor(r + sr) + ' A' + sr + ',' + sr + ' 0 0,0 ' + (r - sr) + ',' + r + ' z'
                 });
                 svg.appendChild(element);
                 element = createSVGElement('path', {
-                    'style': 'stroke:none;fill:' + colors[i % 9],
+                    'style': 'stroke:none;fill:' + colors[s % 9],
                     'd': 'M0,' + r + ' A' + r + ',' + r + ' 0 0,1 ' + Math.floor(r + r * Math.cos(Math.PI * v)) + ',' + Math.floor(r - r * Math.sin(Math.PI * v)) + 
                     ' L' + Math.floor(r + sr * Math.cos(Math.PI * v)) + ',' + Math.floor(r - sr * Math.sin(Math.PI * v)) + ' A' + sr + ',' + sr + ' 0 0,0 ' + (r - sr) + ',' + r + ' z'
                 });
@@ -262,7 +298,6 @@ window.chart = (function() {
             }            
             return panel;
         },
-        // data: { resource, { start, end } }
         gantt: function(w, h, data, options) {
             var svg = createSVGElement('svg', {
                 'class': 'gantt',

@@ -4,9 +4,9 @@
 <head>
 	<meta charset="utf-8">
 	<title>SVG Charts</title>
-	<link rel="stylesheet" href="styles/charts.css">
-	<script src="scripts/charts.js"></script>
-	<script src="data/datasource.js"></script>
+	<link rel="stylesheet" href="/styles/charts.css">
+	<script src="/scripts/charts.js"></script>
+	<script src="/data/datasource.js"></script>
 	<script>
 		window.addEventListener('load', function () {
 			var body = document.body;
@@ -14,12 +14,13 @@
 			// See datasource.js for data sets
 			body.appendChild(chart.pie(50, pie));
 			body.appendChild(chart.donut(50, pie));
-			body.appendChild(chart.line(300, 100, line, { 'grid': true }));
+			body.appendChild(chart.line(300, 100, line, { 'grid': true, min: 0, max: 50 }));
 			body.appendChild(chart.bubble(400, 100, line));
 			body.appendChild(chart.histogram(400, 200, line, { 'grid': true }));
+//			body.appendChild(chart.polar(200, line));
 			body.appendChild(chart.radar(100, line));
 //			body.appendChild(chart.map(400, 200, [12, 12, 13, 6, 23, 78, 54, 12]));
-			body.appendChild(chart.gauge(50, gauge, { 'min': 0 }));
+			body.appendChild(chart.gauge(50, pie, { 'min': 0, 'max': 100 }));
 //			body.appendChild(chart.gantt(400, 200, gantt));
 		});
 	</script>
