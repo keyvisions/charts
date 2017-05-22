@@ -3,7 +3,8 @@ window.chart = (function() {
     
     // Helper functions
     function setAttributes(element, attrs) {
-        for (var key in attrs) element.setAttribute(key, attrs[key]);
+        for (var key in attrs) 
+            if (attrs[key]) element.setAttribute(key, attrs[key]);
     }
 
     function createSVGElement(tagName, attrs) {
@@ -86,12 +87,13 @@ window.chart = (function() {
 
                 svg.appendChild(grid(w, h, xmin, xmax, ymin, ymax, options));
 
+                var sx = w / (xmax - xmin), sy = h / (ymax - ymin);
                 for (var s = 1; s < data.length; ++s) {
                     var points = '', I = Math.min(data[0].value.length, data[s].value.length);
                     for (var i = 0; i < I; ++i) {
-//                        var x = (data[0].value[i] - xo) * sx, y = h - (data[s].value[i] - yo) * sy;
-//                        svg.appendChild(circle(3, x, y, { 'style': 'stroke:none;fill:' + colors[(s-1) % 9] }));
-//                        points += x + ',' + y + ' ';
+                        var x = (data[0].value[i] - xmin) * sx, y = h - (data[s].value[i] - ymin) * sy;
+                        svg.appendChild(circle(3, x, y, { 'style': 'stroke:none;fill:' + colors[(s-1) % 9] }));
+                        points += Math.round(x) + ',' + Math.round(y) + ' ';
                     }
                     svg.appendChild(createSVGElement('polyline', {
                         'style': 'stroke:' + colors[(s-1) % 9],
@@ -99,7 +101,7 @@ window.chart = (function() {
                     }));
                 }
             } else {
-                // A least two data sets
+                // At least two data sets
             }
             return svg;
         },
@@ -116,11 +118,11 @@ window.chart = (function() {
 
             // x, y & r, theta
             if (!options || options['mode'] !== 'XY') {
-                for (var i = 0; data[0].value.length; ++i) {
+                for (var i = 0; i < data[0].value.length; ++i) {
                     for (var s = 1; s < data.length; ++s) {
                         data[s].value[i] *= Math.sin(data[0].value[i]);
                     }
-                    data[s].value[i] *= Math.sin(data[0].value[i]);
+ //                   data[s].value[i] *= Math.sin(data[0].value[i]);
                 }
             }
             
